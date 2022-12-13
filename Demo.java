@@ -1,185 +1,99 @@
-import java.sql.PreparedStatement;
 import java.sql.Connection;
-import java.sql.ResultSet;
 import java.sql.DriverManager;
-import java.sql.SQLException;
-import java.sql.Statement;
-
 import java.util.Scanner;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.sql.ResultSet;
 
 class Demo
 {
-	static final String query1 = "insert into user values(?,?)";
-	static final String query2 = "select * from employee where ename LIKE (?)";
-	static final String query3 = "select MAX(esalary) from employee";
-	static final String query4 = "select count(*) from employee";
-	static final String query5 = "select * from employee where deptno=(?)";
-	static final String query6 = "delete from employee where city=(?)";
-	static final String query7 = "update employee set esalary=(?) where edept=(?)";
+	static Connection conn = null;
+	static PreparedStatement ps = null;
+	static ResultSet rs = null;
 	
-	public static void main(String args[])
+	static String query1 = "insert into BankCustomer values(?,?,?,?,?,?)";
+	static String query2 = "select * from BankCustomer where depositDate <> (?,?)";   // and depositDate < ?";
+	static String query3 = "select * from BankCustomer where depositDate > '2000-01-11' and depositDate < '2022-01-21'";
+	
+	public static void main(String args[]) 
 	{
-		//SQLInjection
-		Scanner sc = new Scanner(System.in);
-		Connection conn = null;
-		PreparedStatement ps = null;
-		ResultSet rs = null;
-		Statement stmt = null;
-		
 		try
 		{
 			Class.forName("com.mysql.cj.jdbc.Driver");
 			conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/technorbit", "root", "root");
 			
-			if(conn != null)
+			if(conn == null)
 			{
-				System.out.println("Connection Established....");
+				System.out.println("Connection NOT Establish....");
 			}
 			else
 			{
-				System.out.println("Connection Not Established....");
+				System.out.println("Conection Establish....");
 			}
 		}
-		catch(ClassNotFoundException cnfe)
+		catch(Exception e)
 		{
-			System.out.println(cnfe);
+			System.out.println(e);
+		}
+		
+		try
+		{
+			Scanner sc = new Scanner(System.in);
+			
+			ps = conn.prepareStatement(query2);
+			
+			// Date
+			System.out.println("Enter the deposit Date ....");
+			String str1 = sc.next();
+			
+			System.out.println("Enter the withdraw Date ....");
+			String str2 = sc.next();
+			
+			java.text.SimpleDateFormat sdf1 = new java.text.SimpleDateFormat("dd-MM-yyyy");
+			java.text.SimpleDateFormat sdf2 = new java.text.SimpleDateFormat("dd-MM-yyyy");
+			
+			java.util.Date ud1 = sdf1.parse(str1);
+			java.util.Date ud2 = sdf2.parse(str2);
+			
+			long l1 = ud1.getTime();
+			long l2 = ud2.getTime();
+			
+			java.sql.Date sd1 = new java.sql.Date(l1);
+			java.sql.Date sd2 = new java.sql.Date(l2);
+			System.out.println(sd1);
+			System.out.println(sd2);
+			
+			ps.setDate(1, sd1);
+			ps.setDate(2, sd2);
+			
+			/*
+			ps.setInt(1, 12355);
+			ps.setString(2, "Ganesh");
+			ps.setInt(3, 3400);
+			ps.setInt(4, 400);
+			ps.setDate(5, sd1);
+			ps.setDate(6, sd2);
+			
+			int row = ps.executeUpdate();
+			
+			System.out.println("Data Stored successfully... : " + row);
+			*/
+			
+			rs = ps.executeQuery(query2);
+			while(rs.next())
+			{
+				System.out.println(rs.getInt(1) +" "+rs.getString(2) +" "+ rs.getInt(3)+" "+rs.getInt(4)+" "+rs.getDate(5)+" "+rs.getDate(6));
+			}
+			
 		}
 		catch(SQLException sqle)
 		{
-			System.out.println(sqle);
-		}
-		
-		
-		//
-		try
-		{
-			ps = conn.prepareStatement(query7);
-			stmt = conn.createStatement();
-			/* Q.1
-			System.out.println("Enter the Initial Character.....");
-			String str = sc.next();
-			ps.setString(1, str);
-			rs = ps.executeQuery();
-			while(rs.next())
-			{
-				System.out.println("EID :  " + rs.getInt(1) + " Ename :  " + rs.getString(2) + " Esalary :  " + rs.getInt(3) + " Edept :  " + rs.getString(4) + " DEPTNO :  " + rs.getInt(5));
-			}
-			*/
-			
-			/* Q.2
-			rs = ps.executeQuery();
-			rs.next();
-			int sal = rs.getInt(1);
-			System.out.println("MAX Salary :" + sal);
-			*/
-			
-			/* Q.3
-			rs = ps.executeQuery();
-			rs.next();
-			int count = rs.getInt(1);
-			System.out.println("Number of Records :" + count);
-			
-			*/
-			
-			/* Q.4
-			System.out.println("Enter the Department Number : ");
-			String s = sc.next();
-			int depno = Integer.parseInt(s);
-			ps.setInt(1, depno);
-			
-			rs = ps.executeQuery();
-			while(rs.next())
-			{
-				System.out.println("EID :  " + rs.getInt(1) + " Ename :  " + rs.getString(2) + " Esalary :  " + rs.getInt(3) + " Edept :  " + rs.getString(4) + " DEPTNO :  " + rs.getInt(5));
-			}
-			*/
-			
-			/* Q.5
-			System.out.println("Enter the City Name : ");
-			String s = sc.next();
-			ps.setString(1, s);
-			
-			int a = ps.executeUpdate();
-			System.out.println(a);
-			*/
-			
-			System.out.println("Enter Dept Name : ");
-			String str = sc.next();
-			
-			String query = "select esalary from employee where edept=" + "'" + str + "'";
-			rs = stmt.executeQuery(query);
-			rs.next();
-			int salary = rs.getInt(1);
-			System.out.println(salary);
-			
-			System.out.println("Enter How Many percentage you want to Hike : ");
-			float value = Float.parseFloat(sc.next());
-			float value1 = (value/100); 
-			float value2 = (salary * value1);
-			int finalans = (int)(salary + value2);
-			
-			ps.setInt(1, finalans);
-			ps.setString(2, str);
-			
-			int row = ps.executeUpdate();
-			System.out.println(row);
+			System.out.println("SqlException : " + sqle);
 		}
 		catch(Exception e)
 		{
-			System.out.println(e);
-		}
-
-		//finally block
-		finally
-		{
-			try
-			{
-				ps.close();
-			}
-			catch(SQLException npe)
-			{
-				System.out.println("NULL POinter : " + npe);
-			}
-			
-			try
-			{
-				conn.close();
-			}
-			catch(SQLException npe)
-			{
-				System.out.println("NULL POinter : " + npe);
-			}
+			System.out.println("Exception : " + e);
 		}
 		
-		
-		
-		
-		/* 2nd try catch
-		try
-		{
-			ps = conn.prepareStatement(query1);
-			
-			
-			System.out.println("Enter the User Name : ");
-			String str1 = sc.next();
-			
-			System.out.println("Enter the Password : ");
-			String str2 = sc.next();
-			
-			ps.setString(1, str1);
-			ps.setString(2, str2);
-			
-			int row = ps.executeUpdate();
-			System.out.println("No of ROW : " + row);
-		
-		}
-		catch(Exception e)
-		{
-			System.out.println(e);
-		}
-	*/
-	
-
 	}
-	
 }
